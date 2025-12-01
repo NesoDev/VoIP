@@ -38,21 +38,19 @@
                                     <form id="login-form">
                                         <div class="form-group">
                                             <label for="display_name">Display Name</label>
-                                            <input type="text" id="display_name" placeholder="e.g. John Doe" required>
+                                            <input type="text" id="display_name" placeholder="e.g. Student 1" required>
                                         </div>
                                         <div class="form-group">
                                             <label for="sip_uri">SIP Extension (URI)</label>
-                                            <input type="text" id="sip_uri" placeholder="e.g. 101@my-pbx.3cx.us"
-                                                required>
+                                            <input type="text" id="sip_uri" placeholder="e.g. 100@localhost" required>
                                         </div>
                                         <div class="form-group">
                                             <label for="sip_password">SIP Password</label>
-                                            <input type="password" id="sip_password" placeholder="Secret password"
-                                                required>
+                                            <input type="password" id="sip_password" placeholder="1234" required>
                                         </div>
                                         <div class="form-group">
                                             <label for="wss_url">WSS URL</label>
-                                            <input type="text" id="wss_url" placeholder="ws://localhost:8000/sip-proxy"
+                                            <input type="text" id="wss_url" placeholder="ws://localhost:8088/ws"
                                                 required>
                                         </div>
                                 </div>
@@ -201,7 +199,7 @@
                     <audio id="ringtone" src="https://assets.mixkit.co/active_storage/sfx/1359/1359-preview.mp3"
                         loop></audio>
 
-                    <script src="https://cdnjs.cloudflare.com/ajax/libs/jssip/3.10.0/jssip.min.js"></script>
+                    <script src="jssip.min.js"></script>
                     <script src="app.js"></script>
 </body>
 

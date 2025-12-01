@@ -48,8 +48,8 @@ if (backBtn) backBtn.addEventListener('click', () => switchView('history'));
 // Auto-fill WSS URL based on current location (Localhost or Lightsail IP)
 window.addEventListener('DOMContentLoaded', () => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    // Use window.location.host to include port (e.g., 1.2.3.4:8000)
-    const wsUrl = `${protocol}//${window.location.host}/sip-proxy`;
+    // Asterisk is on port 8088, path /ws
+    const wsUrl = `${protocol}//${window.location.hostname}:8088/ws`;
 
     const wssInput = document.getElementById('wss_url');
     if (wssInput) {
@@ -73,12 +73,25 @@ async function handleLogin(e) {
     elements.loginBtn.disabled = true;
     elements.loginBtn.textContent = 'Connecting...';
 
+    // Normalize SIP URI
+    let formattedUri = sipUri;
+    if (!formattedUri.includes('@')) {
+        formattedUri = `${formattedUri}@${window.location.hostname}`;
+    }
+    if (!formattedUri.startsWith('sip:')) {
+        formattedUri = `sip:${formattedUri}`;
+    }
+
+    // Extract username for auth (remove sip: prefix first)
+    const authUser = formattedUri.replace(/^sip:/, '').split('@')[0];
+
     // JsSIP Configuration
     try {
         const socket = new JsSIP.WebSocketInterface(wssUrl);
         const config = {
             sockets: [socket],
-            uri: sipUri,
+            uri: formattedUri,
+            authorization_user: authUser,
             password: sipPassword,
             display_name: displayName,
             register: true

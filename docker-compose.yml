@@ -6,8 +6,6 @@ services:
     container_name: voip-backend
     ports:
       - "8000:8000"      # API FastAPI
-      - "5060:5060/udp"  # SIP
-      - "10000-10100:10000-10100/udp"  # RTP (rango de puertos para audio)
     environment:
       - PYTHONUNBUFFERED=1
     restart: unless-stopped
@@ -27,6 +25,23 @@ services:
       - "3000:3000"      # Frontend HTTP
     depends_on:
       - backend
+    restart: unless-stopped
+    networks:
+      - voip-network
+
+  asterisk:
+    image: andrius/asterisk
+    container_name: voip-asterisk
+    ports:
+      - "5060:5060/udp"
+      - "8088:8088"
+      - "10000-10100:10000-10100/udp"
+    volumes:
+      - ./asterisk/pjsip.conf:/etc/asterisk/pjsip.conf
+      - ./asterisk/extensions.conf:/etc/asterisk/extensions.conf
+      - ./asterisk/http.conf:/etc/asterisk/http.conf
+      - ./asterisk/modules.conf:/etc/asterisk/modules.conf
+      - ./asterisk/rtp.conf:/etc/asterisk/rtp.conf
     restart: unless-stopped
     networks:
       - voip-network

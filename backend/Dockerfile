@@ -2,7 +2,7 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-RUN pip install fastapi uvicorn
+RUN pip install fastapi uvicorn qrcode
 
 COPY main.py .
 COPY add_extension.sh .

@@ -72,7 +72,8 @@ fi
 if $DOCKER_MISSING || $COMPOSE_MISSING; then
     echo
     print_warn "Componentes faltantes detectados"
-    read -p "${YELLOW}Instalar los componentes faltantes? [y/N]: ${NC}" -n 1 -r
+    printf "${YELLOW}Instalar los componentes faltantes? [y/N]: ${NC}"
+    read -n 1 -r REPLY
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         # ---- Docker -------------------------------------------------

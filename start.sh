@@ -67,12 +67,10 @@ export PUBLIC_IP=${DETECTED_IP}
 # ── Paso 3 – Iniciar contenedores ────────────────────────────────
 print_step "Iniciando servicios..."
 if docker compose version >/dev/null 2>&1; then
-    (docker compose up -d) &>/dev/null &
+    docker compose up -d >/dev/null 2>&1
 else
-    (docker-compose up -d) &>/dev/null &
+    docker-compose up -d >/dev/null 2>&1
 fi
-spinner $!
-wait $!
 print_ok "Servicios en marcha."
 
 # ── Paso 4 – Esperar a que los contenedores estén listos ────────

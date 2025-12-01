@@ -94,8 +94,10 @@ if $DOCKER_MISSING || $COMPOSE_MISSING; then
             spinner $!
             wait $!
             sudo usermod -aG docker "$USER"
-            print_ok "Docker instalado"
-            print_warn "Necesitas cerrar sesión y volver a entrar para que el grupo docker surta efecto"
+        print_ok "Docker instalado"
+        print_warn "Debes cerrar sesión y volver a iniciar sesión SSH para que el grupo docker surta efecto."
+        echo -e "${BLUE}Cierra esta terminal y conéctate de nuevo antes de continuar.${NC}"
+        exit 0
         fi
         # ---- Docker‑Compose (solo si Docker ya estaba) -------------
         if $COMPOSE_MISSING && ! $DOCKER_MISSING; then

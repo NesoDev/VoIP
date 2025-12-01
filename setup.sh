@@ -98,7 +98,8 @@ if $DOCKER_MISSING || $COMPOSE_MISSING; then
         print_ok "Docker instalado"
         print_warn "Debes cerrar sesión y volver a iniciar sesión SSH para que el grupo docker surta efecto."
         echo -e "${BLUE}Cierra esta terminal y conéctate de nuevo antes de continuar.${NC}"
-        exit 0
+        # exit 0  # removed to allow .env generation on subsequent runs
+
         fi
         # ---- Docker‑Compose (solo si Docker ya estaba) -------------
         if $COMPOSE_MISSING && ! $DOCKER_MISSING; then

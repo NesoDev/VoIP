@@ -66,13 +66,15 @@
     <div id="result">
         <h2>¡Extensión Creada!</h2>
         <div id="qrcode"></div>
-        <div class="data-box">
-            <p><strong>Usuario:</strong> <span id="res_user"></span></p>
-            <p><strong>Password:</strong> <span id="res_pass"></span></p>
-            <p><strong>Dominio:</strong> <span id="res_domain"></span></p>
+        <p style="font-size: 12px; color: #666;">Si el QR falla, ingresa estos datos manualmente:</p>
+        <div class="data-box" style="background: #e8f0fe; border: 1px solid #b6d4fe;">
+            <p><strong>Usuario:</strong> <span id="res_user" style="font-size: 1.2em; font-weight: bold;"></span></p>
+            <p><strong>Password:</strong> <span id="res_pass" style="font-size: 1.2em; font-weight: bold;"></span></p>
+            <p><strong>Dominio:</strong> <span id="res_domain" style="font-size: 1.2em; font-weight: bold;"></span></p>
+            <p><strong>Nombre para mostrar:</strong> <span id="res_display"
+                    style="font-size: 1.2em; font-weight: bold;"></span></p>
             <p><strong>Transporte:</strong> UDP</p>
         </div>
-        <p>Escanea el QR con tu App VoIP o configura manualmente.</p>
         <button onclick="location.reload()">Crear Otra</button>
     </div>
 
@@ -104,6 +106,7 @@
                     document.getElementById('res_user').innerText = data.data.username;
                     document.getElementById('res_pass').innerText = data.data.password;
                     document.getElementById('res_domain').innerText = data.data.domain;
+                    document.getElementById('res_display').innerText = data.data.display_name;
 
                     // Generate QR
                     new QRCode(document.getElementById("qrcode"), {

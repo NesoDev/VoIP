@@ -4,8 +4,8 @@
 type=transport
 protocol=udp
 bind=0.0.0.0:5060
+; local_net=192.168.0.0/16
 local_net=172.16.0.0/12
-local_net=192.168.0.0/16
 local_net=10.0.0.0/8
 external_media_address=EXTERNAL_IP_PLACEHOLDER
 external_signaling_address=EXTERNAL_IP_PLACEHOLDER
@@ -87,3 +87,6 @@ username=100
 type=identify
 endpoint=100
 match=100
+
+; --- Dynamic Users ---
+#include pjsip_custom.conf

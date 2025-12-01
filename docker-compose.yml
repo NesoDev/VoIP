@@ -32,9 +32,10 @@ services:
     container_name: voip-asterisk
     ports:
       - "5060:5060/udp"
+      - "5060:5060/tcp"
       - "8088:8088"
+      - "5038:5038"
       - "10000-10100:10000-10100/udp"
-      - "5038:5038" # AMI Port for Backend
     volumes:
       - ./asterisk/pjsip.conf:/etc/asterisk/pjsip.conf
       - ./asterisk/extensions.conf:/etc/asterisk/extensions.conf

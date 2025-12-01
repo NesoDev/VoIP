@@ -64,7 +64,40 @@ print_ok "Imágenes construidas."
 DETECTED_IP=$(ipconfig getifaddr en0 2>/dev/null || hostname -I | awk '{print $1}' 2>/dev/null || echo "127.0.0.1")
 export PUBLIC_IP=${DETECTED_IP}
 
-# ── Paso 3 – Iniciar contenedores ────────────────────────────────
+# ── Paso 3 – Configuración de IP ────────────────────────────────
+# Detectar IP pública/local
+# Prioridad: 1. IP Local (en0/eth0) para demos locales. 2. Curl (WAN) si estamos en nube.
+
+# Intentar obtener IP local primero (macOS/Linux)
+DETECTED_IP=$(ipconfig getifaddr en0 2>/dev/null || hostname -I | awk '{print $1}' 2>/dev/null)
+
+if [ -n "$DETECTED_IP" ]; then
+    PUBLIC_IP="$DETECTED_IP"
+else
+    # Fallback a detección externa si no encontramos IP local
+    if command -v curl &> /dev/null; then
+        PUBLIC_IP=$(curl -s ifconfig.me || echo "127.0.0.1")
+    else
+        PUBLIC_IP="127.0.0.1"
+    fi
+fi
+
+export PUBLIC_IP
+echo "IP Detectada: $PUBLIC_IP"
+
+# Generar pjsip.conf con la IP correcta
+if [ -f "asterisk/pjsip.conf.tpl" ]; then
+    echo "Configurando NAT en Asterisk..."
+    sed "s/EXTERNAL_IP_PLACEHOLDER/$PUBLIC_IP/g" asterisk/pjsip.conf.tpl > asterisk/pjsip.conf
+fi
+
+# Limpiar usuarios anteriores (Reset)
+# Limpiar usuarios anteriores (Reset) - ACTIVADO para debugging limpio
+echo "Limpiando usuarios anteriores..."
+echo "; Dynamic PJSIP Users" > asterisk/pjsip_custom.conf
+echo "; Dynamic Extensions" > asterisk/extensions_custom.conf
+
+# ── Paso 4 – Iniciar servicios ──────────────────────────────────
 print_step "Iniciando servicios..."
 if docker compose version >/dev/null 2>&1; then
     if ! docker compose up -d; then

@@ -28,15 +28,19 @@ async def create_user(user: UserRequest):
             check=True
         )
         
-        # Store password for provisioning endpoint
-        user_passwords[user.username] = user.password
+        # Store password and display name for provisioning endpoint
+        user_passwords[user.username] = {
+            "password": user.password,
+            "display_name": user.display_name
+        }
         
         public_ip = os.getenv("PUBLIC_IP", "localhost")
         
         # Generate Linphone Provisioning URL
-        # Note: Linphone expects this URL to return the XML config
-        provisioning_url = f"http://{public_ip}:8000/provisioning/{user.username}"
-        qr_data = f"linphone-config://{public_ip}:8000/provisioning/{user.username}"
+        # Using port 3000 (Nginx) is safer than 8000 to avoid firewall issues.
+        # Nginx proxies /api/ to backend:8000/
+        provisioning_url = f"http://{public_ip}:3000/api/provisioning/{user.username}"
+        qr_data = provisioning_url
         
         return {
             "status": "success",
@@ -44,6 +48,7 @@ async def create_user(user: UserRequest):
             "data": {
                 "username": user.username,
                 "password": user.password,
+                "display_name": user.display_name,
                 "domain": public_ip,
                 "transport": "UDP",
                 "qr_code_text": qr_data
@@ -52,15 +57,98 @@ async def create_user(user: UserRequest):
     except subprocess.CalledProcessError as e:
         raise HTTPException(status_code=500, detail=f"Script failed: {e.stderr}")
 
+def recover_user_from_config(username: str):
+    """Recover password and display_name from pjsip_custom.conf if memory is lost."""
+    try:
+        with open("add_extension.sh", "r") as f: # Dummy check to ensure we are in right dir
+            pass
+            
+        config_path = "asterisk/pjsip_custom.conf"
+        # In Docker, the path is mapped to /etc/asterisk, but we are running from /app
+        # and the volume is ./asterisk -> /etc/asterisk.
+        # Wait, inside the container, the script writes to /etc/asterisk/pjsip_custom.conf
+        # But the python app reads from...?
+        # The python app is in /app. The volume is mounted at /etc/asterisk.
+        # So we should read /etc/asterisk/pjsip_custom.conf
+        
+        config_path = "/etc/asterisk/pjsip_custom.conf"
+        if not os.path.exists(config_path):
+            return None
+
+        with open(config_path, "r") as f:
+            content = f.read()
+            
+        # Simple parsing logic
+        # Look for [username]
+        # Then look for password=... and callerid="..."
+        
+        user_section = f"[{username}](endpoint_standard)"
+        if user_section not in content:
+            return None
+            
+        # Extract password
+        import re
+        pass_match = re.search(r"\[auth" + username + r"\]\(auth_user\)\s+username=" + username + r"\s+password=(.+)", content)
+        # Regex might be tricky across lines. Let's do line by line.
+        
+        lines = content.split('\n')
+        password = None
+        display_name = None
+        
+        in_auth_section = False
+        
+        for line in lines:
+            line = line.strip()
+            if line.startswith(f"callerid="):
+                # callerid="Name" <User>
+                # Check if this callerid belongs to our user block. 
+                # This is a bit weak without full parsing, but for this file structure it works.
+                # We assume the callerid line comes shortly after the [username] block start.
+                pass
+            
+            # Better regex approach on full content
+            
+        # Regex for password in auth section
+        # [auth200](auth_user)
+        # username=200
+        # password=1234
+        pass_pattern = re.compile(r"\[auth" + username + r"\]\(auth_user\)\s*\n\s*username=" + username + r"\s*\n\s*password=(.*)", re.MULTILINE)
+        pass_match = pass_pattern.search(content)
+        if pass_match:
+            password = pass_match.group(1).strip()
+            
+        # Regex for display name
+        # callerid="nesodev" <200>
+        caller_pattern = re.compile(r"\[" + username + r"\]\(endpoint_standard\).*?callerid=\"(.*?)\"\s*<" + username + r">", re.DOTALL)
+        caller_match = caller_pattern.search(content)
+        if caller_match:
+            display_name = caller_match.group(1).strip()
+            
+        if password and display_name:
+            return {"password": password, "display_name": display_name}
+            
+        return None
+    except Exception as e:
+        print(f"Error recovering user: {e}")
+        return None
+
 @app.get("/provisioning/{username}")
 async def get_provisioning(username: str):
-    if username not in user_passwords:
-        # Fallback: try to find user in config or just fail. 
-        # For demo, if restart happens, memory is lost. 
-        # We'll assume a default password or fail.
-        raise HTTPException(status_code=404, detail="User not found or restart occurred")
+    print(f"Provisioning requested for {username}") # Debug log
     
-    password = user_passwords[username]
+    user_data = None
+    if username in user_passwords:
+        user_data = user_passwords[username]
+    else:
+        # Try to recover from file
+        print(f"User {username} not in memory, attempting recovery from file...")
+        user_data = recover_user_from_config(username)
+        
+    if not user_data:
+        raise HTTPException(status_code=404, detail="User not found (and could not be recovered)")
+    
+    password = user_data["password"]
+    display_name = user_data["display_name"]
     public_ip = os.getenv("PUBLIC_IP", "localhost")
     
     xml_content = f"""<?xml version="1.0" encoding="UTF-8"?>
@@ -68,7 +156,7 @@ async def get_provisioning(username: str):
   <section name="proxy_0">
     <entry name="reg_proxy" value="sip:{public_ip};transport=udp"/>
     <entry name="reg_route" value="sip:{public_ip};transport=udp"/>
-    <entry name="reg_identity" value="sip:{username}@{public_ip}"/>
+    <entry name="reg_identity" value="&quot;{display_name}&quot; &lt;sip:{username}@{public_ip}&gt;"/>
     <entry name="reg_expires" value="3600"/>
     <entry name="reg_sendregister" value="1"/>
     <entry name="publish" value="0"/>

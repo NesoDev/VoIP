@@ -3,7 +3,7 @@
 #  start.sh – Construye y lanza los contenedores del proyecto
 # ------------------------------------------------------------
 
-set -euo pipefail
+# set -euo pipefail
 
 # ── Colores ─────────────────────────────────────────────────────
 RED='\033[0;31m'
@@ -67,9 +67,15 @@ export PUBLIC_IP=${DETECTED_IP}
 # ── Paso 3 – Iniciar contenedores ────────────────────────────────
 print_step "Iniciando servicios..."
 if docker compose version >/dev/null 2>&1; then
-    docker compose up -d >/dev/null 2>&1
+    if ! docker compose up -d; then
+        print_error "Falló docker compose up"
+        exit 1
+    fi
 else
-    docker-compose up -d >/dev/null 2>&1
+    if ! docker-compose up -d; then
+        print_error "Falló docker-compose up"
+        exit 1
+    fi
 fi
 print_ok "Servicios en marcha."
 

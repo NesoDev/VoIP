@@ -13,9 +13,9 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 print_step() { echo -e "${BLUE}[INFO]${NC} $*"; }
-print_ok()   { echo -e "${GREEN}[✓]${NC} $*"; }
+print_ok()   { echo -e "${GREEN}[OK]${NC} $*"; }
 print_warn() { echo -e "${YELLOW}[!]${NC} $*"; }
-print_error(){ echo -e "${RED}[✗]${NC} $*"; }
+print_error(){ echo -e "${RED}[ERROR]${NC} $*"; }
 
 spinner() {
     local pid=$1 delay=0.1 spin='|/-\\'
@@ -128,7 +128,7 @@ print_ok ".env creado"
 echo
 cat <<'EOF' | sed "s/^/$(printf \"${GREEN}\")/;s/$/$(printf \"${NC}\")/"
 ╔══════════════════════════════════════════════════════════╗
-║                ✅ Preparación completada                ║
+║                   Preparación completada                 ║
 ╚══════════════════════════════════════════════════════════╝
 EOF
 

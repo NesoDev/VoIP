@@ -4,203 +4,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VoIP Demo - SIP Protocol Demonstration</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>VoIP Demo - Crear Extensión</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+
+        input {
+            padding: 10px;
+            margin: 10px;
+            width: 80%;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        #result {
+            margin-top: 20px;
+            display: none;
+        }
+
+        #qrcode {
+            margin: 20px auto;
+            display: flex;
+            justify-content: center;
+        }
+
+        .data-box {
+            background: #f0f0f0;
+            padding: 15px;
+            text-align: left;
+            border-radius: 5px;
+        }
+    </style>
 </head>
 
 <body>
-    <header class="header">
-        <div class="container">
-            <div class="header-content">
-                <div class="logo">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                    </svg>
-                    <div>
-                        <h1>VoIP Demo</h1>
-                        <p>SIP Protocol Demonstration</p>
-                        <div class="container">
-                            <header>
-                                <h1>VoIP Demo <span class="badge">WebRTC</span></h1>
-                                <div id="user-info" style="display: none;">
-                                    <span class="status-dot"></span>
-                                    <span class="username"></span>
-                                    <span class="user-ip"></span>
-                                    <button id="logout-btn" class="btn-secondary">Logout</button>
-                                </div>
-                            </header>
+    <h1>Crear Nueva Extensión</h1>
+    <p>Ingresa tus datos para generar tu extensión en el PBX.</p>
 
-                            <!-- Login Section -->
-                            <section id="login-section">
-                                <div class="card login-card">
-                                    <h2>Connect to SIP Server</h2>
-                                    <form id="login-form">
-                                        <div class="form-group">
-                                            <label for="display_name">Display Name</label>
-                                            <input type="text" id="display_name" placeholder="e.g. Student 1" required>
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="sip_uri">SIP Extension (URI)</label>
-                                            <input type="text" id="sip_uri" placeholder="e.g. 100@localhost" required>
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="sip_password">SIP Password</label>
-                                            <input type="password" id="sip_password" placeholder="1234" required>
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="wss_url">WSS URL</label>
-                                            <input type="text" id="wss_url" placeholder="ws://localhost:8088/ws"
-                                                required>
-                                        </div>
-                                </div>
-                                <button type="submit" id="login-btn" class="btn-primary">Connect</button>
-                                </form>
-                        </div>
-                        </section>
+    <div id="form">
+        <input type="text" id="username" placeholder="Número de Extensión (ej: 300)" />
+        <input type="text" id="display_name" placeholder="Tu Nombre (ej: Juan Perez)" />
+        <input type="password" id="password" placeholder="Contraseña SIP" value="1234" />
+        <br>
+        <button onclick="createUser()">Crear Extensión</button>
+    </div>
 
-                        <!-- Dashboard Section -->
-                        <section id="dashboard" style="display: none;">
-                            <!-- Sidebar Navigation -->
-                            <nav class="sidebar">
-                                <button class="nav-btn active" data-view="dialer">Dialer</button>
-                                <button class="nav-btn" data-view="history">Call History</button>
-                                <button class="nav-btn" data-view="logs">SIP Logs</button>
-                            </nav>
+    <div id="result">
+        <h2>¡Extensión Creada!</h2>
+        <div id="qrcode"></div>
+        <div class="data-box">
+            <p><strong>Usuario:</strong> <span id="res_user"></span></p>
+            <p><strong>Password:</strong> <span id="res_pass"></span></p>
+            <p><strong>Dominio:</strong> <span id="res_domain"></span></p>
+            <p><strong>Transporte:</strong> UDP</p>
+        </div>
+        <p>Escanea el QR con tu App VoIP o configura manualmente.</p>
+        <button onclick="location.reload()">Crear Otra</button>
+    </div>
 
-                            <!-- Main Content Area -->
-                            <main class="main-content">
+    <script>
+        async function createUser() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const displayName = document.getElementById('display_name').value;
 
-                                <!-- Dialer View -->
-                                <div id="view-dialer" class="view-section active">
-                                    <div class="section-header">
-                                        <h3>Dialer</h3>
-                                        <div class="status-badge" id="connection-status">Disconnected</div>
-                                    </div>
-                                    <div class="dialer-container">
-                                        <input type="text" id="dial-input" placeholder="Enter extension to call..."
-                                            class="dial-input">
-                                        <button id="call-btn" class="btn-success btn-lg">📞 Call</button>
-                                    </div>
-                                </div>
+            if (!username || !password) return alert("Faltan datos");
 
-                                <!-- Call History View -->
-                                <div id="view-history" class="view-section">
-                                    <div class="section-header">
-                                        <h3>Call History</h3>
-                                        <button id="refresh-history-btn" class="btn-sm">Clear</button>
-                                    </div>
-                                    <div id="history-list" class="list-group">
-                                        <!-- History items -->
-                                    </div>
-                                </div>
+            const btn = document.querySelector('button');
+            btn.disabled = true;
+            btn.innerText = "Procesando...";
 
-                                <!-- Call Details View (Hidden by default) -->
-                                <div id="view-call-details" class="view-section" style="display: none;">
-                                    <div class="section-header">
-                                        <button class="back-btn">← Back</button>
-                                        <h3>SIP Flow Visualization</h3>
-                                    </div>
-                                    <div class="process-visualization">
-                                        <div class="process-step" id="step-invite">
-                                            <div class="icon">📤</div>
-                                            <div class="label">INVITE</div>
-                                            <div class="status">Waiting...</div>
-                                        </div>
-                                        <div class="arrow">→</div>
-                                        <div class="process-step" id="step-trying">
-                                            <div class="icon">⏳</div>
-                                            <div class="label">100 Trying</div>
-                                            <div class="status">Waiting...</div>
-                                        </div>
-                                        <div class="arrow">→</div>
-                                        <div class="process-step" id="step-ringing">
-                                            <div class="icon">🔔</div>
-                                            <div class="label">180 Ringing</div>
-                                            <div class="status">Waiting...</div>
-                                        </div>
-                                        <div class="arrow">→</div>
-                                        <div class="process-step" id="step-ok">
-                                            <div class="icon">✅</div>
-                                            <div class="label">200 OK</div>
-                                            <div class="status">Waiting...</div>
-                                        </div>
-                                        <div class="arrow">→</div>
-                                        <div class="process-step" id="step-ack">
-                                            <div class="icon">🤝</div>
-                                            <div class="label">ACK</div>
-                                            <div class="status">Waiting...</div>
-                                        </div>
-                                        <div class="arrow">→</div>
-                                        <div class="process-step" id="step-rtp">
-                                            <div class="icon">🔊</div>
-                                            <div class="label">RTP Media</div>
-                                            <div class="status">Waiting...</div>
-                                        </div>
-                                        <div class="arrow">→</div>
-                                        <div class="process-step" id="step-bye">
-                                            <div class="icon">👋</div>
-                                            <div class="label">BYE</div>
-                                            <div class="status">Waiting...</div>
-                                        </div>
-                                    </div>
-                                    <div class="detailed-logs" id="call-detailed-logs">
-                                        <!-- Detailed logs list -->
-                                    </div>
-                                </div>
+            try {
+                const response = await fetch('/api/create-user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password, display_name: displayName })
+                });
 
-                                <!-- System Logs View -->
-                                <div id="view-logs" class="view-section">
-                                    <div class="section-header">
-                                        <h3>SIP Debug Logs</h3>
-                                        <div class="actions">
-                                            <button id="auto-scroll-btn" class="btn-sm active">Auto-scroll:
-                                                ON</button>
-                                            <button id="clear-logs-btn" class="btn-sm btn-danger">Clear</button>
-                                        </div>
-                                    </div>
-                                    <div id="logs-container" class="logs-console">
-                                        <!-- Logs -->
-                                    </div>
-                                </div>
-                            </main>
-                        </section>
-                    </div>
+                const data = await response.json();
 
-                    <!-- Incoming Call Modal -->
-                    <div id="incoming-call-modal" class="modal">
-                        <div class="modal-content">
-                            <h3>Incoming Call</h3>
-                            <p>Incoming call from <strong id="caller-name">Unknown</strong></p>
-                            <div class="modal-actions">
-                                <button id="reject-btn" class="btn-danger">Reject</button>
-                                <button id="accept-btn" class="btn-success">Accept</button>
-                            </div>
-                        </div>
-                    </div>
+                if (data.status === 'success') {
+                    document.getElementById('form').style.display = 'none';
+                    document.getElementById('result').style.display = 'block';
 
-                    <!-- Active Call Overlay -->
-                    <div id="active-call-overlay" class="overlay" style="display: none;">
-                        <div class="call-card">
-                            <div class="call-status">In Call with <span id="peer-name">...</span></div>
-                            <div class="call-timer" id="call-timer">00:00</div>
-                            <div class="visualizer-container">
-                                <canvas id="audio-visualizer"></canvas>
-                            </div>
-                            <div class="call-controls">
-                                <button id="mute-btn" class="btn-control">🎤</button>
-                                <button id="hangup-btn" class="btn-control btn-danger">📞</button>
-                            </div>
-                        </div>
-                    </div>
+                    document.getElementById('res_user').innerText = data.data.username;
+                    document.getElementById('res_pass').innerText = data.data.password;
+                    document.getElementById('res_domain').innerText = data.data.domain;
 
-                    <!-- Audio Elements -->
-                    <audio id="remote-audio" autoplay></audio>
-                    <audio id="ringtone" src="https://assets.mixkit.co/active_storage/sfx/1359/1359-preview.mp3"
-                        loop></audio>
-
-                    <script src="jssip.min.js"></script>
-                    <script src="app.js"></script>
+                    // Generate QR
+                    new QRCode(document.getElementById("qrcode"), {
+                        text: data.data.qr_code_text,
+                        width: 200,
+                        height: 200
+                    });
+                } else {
+                    alert("Error: " + JSON.stringify(data));
+                    btn.disabled = false;
+                }
+            } catch (e) {
+                alert("Error de conexión: " + e);
+                btn.disabled = false;
+            }
+        }
+    </script>
 </body>
 
 </html>

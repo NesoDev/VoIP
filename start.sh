@@ -59,8 +59,12 @@ else
 fi
 print_ok "Imágenes construidas."
 
+# Detectar IP LAN para usarla como PUBLIC_IP si no estamos en AWS
+# Esto se hace aquí para que PUBLIC_IP esté disponible para docker-compose
+DETECTED_IP=$(ipconfig getifaddr en0 2>/dev/null || hostname -I | awk '{print $1}' 2>/dev/null || echo "127.0.0.1")
+export PUBLIC_IP=${DETECTED_IP}
 
-# ── Paso 3 – Levantar los servicios ─────────────────────────────
+# ── Paso 3 – Iniciar contenedores ────────────────────────────────
 print_step "Iniciando servicios..."
 if docker compose version >/dev/null 2>&1; then
     (docker compose up -d) &>/dev/null &
@@ -92,16 +96,18 @@ else
     PUBLIC_IP="localhost"
 fi
 
+# Detectar IP LAN para mostrarla si no estamos en AWS
+DETECTED_IP=$(ipconfig getifaddr en0 2>/dev/null || hostname -I | awk '{print $1}' 2>/dev/null || echo "127.0.0.1")
+
 if [[ "$PUBLIC_IP" == "localhost" ]]; then
-    echo -e "  • Frontend: ${GREEN}http://localhost:3000${NC}"
-    echo -e "  • Backend API: ${GREEN}http://localhost:8000${NC}"
+    echo -e "  • Web Provisioning: ${GREEN}http://${DETECTED_IP}:3000${NC}"
+    echo -e "  • Asterisk PBX:     ${GREEN}${DETECTED_IP}:5060 (UDP)${NC}"
 else
-    echo -e "  • Frontend: ${GREEN}http://${PUBLIC_IP}:3000${NC}"
-    echo -e "  • Backend API: ${GREEN}http://${PUBLIC_IP}:8000${NC}"
+    echo -e "  • Web Provisioning: ${GREEN}http://${PUBLIC_IP}:3000${NC}"
+    echo -e "  • Asterisk PBX:     ${GREEN}${PUBLIC_IP}:5060 (UDP)${NC}"
     echo
     echo -e "${YELLOW}Puertos que deben estar abiertos en el firewall:${NC}"
-    echo "  • TCP 3000  – Frontend"
-    echo "  • TCP 8000  – API"
+    echo "  • TCP 3000  – Web UI"
     echo "  • UDP 5060  – SIP"
     echo "  • UDP 10000‑10100 – RTP"
 fi

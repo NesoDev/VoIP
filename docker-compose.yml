@@ -5,24 +5,22 @@ services:
     build: ./backend
     container_name: voip-backend
     ports:
-      - "8000:8000"      # API FastAPI
+      - "8000:8000"
     environment:
-      - PYTHONUNBUFFERED=1
+      - PUBLIC_IP=${PUBLIC_IP:-localhost}
+    volumes:
+      - ./asterisk:/etc/asterisk
+    depends_on:
+      - asterisk
     restart: unless-stopped
     networks:
       - voip-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
 
   frontend:
     build: ./frontend
     container_name: voip-frontend
     ports:
-      - "3000:3000"      # Frontend HTTP
+      - "3000:80"
     depends_on:
       - backend
     restart: unless-stopped
@@ -36,12 +34,16 @@ services:
       - "5060:5060/udp"
       - "8088:8088"
       - "10000-10100:10000-10100/udp"
+      - "5038:5038" # AMI Port for Backend
     volumes:
       - ./asterisk/pjsip.conf:/etc/asterisk/pjsip.conf
       - ./asterisk/extensions.conf:/etc/asterisk/extensions.conf
       - ./asterisk/http.conf:/etc/asterisk/http.conf
       - ./asterisk/modules.conf:/etc/asterisk/modules.conf
       - ./asterisk/rtp.conf:/etc/asterisk/rtp.conf
+      - ./asterisk/manager.conf:/etc/asterisk/manager.conf
+      - ./asterisk/pjsip_custom.conf:/etc/asterisk/pjsip_custom.conf
+      - ./asterisk/extensions_custom.conf:/etc/asterisk/extensions_custom.conf
     restart: unless-stopped
     networks:
       - voip-network

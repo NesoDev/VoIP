@@ -4,12 +4,19 @@
 type=transport
 protocol=udp
 bind=0.0.0.0:5060
+local_net=172.16.0.0/12
+local_net=192.168.0.0/16
+local_net=10.0.0.0/8
+external_media_address=EXTERNAL_IP_PLACEHOLDER
+external_signaling_address=EXTERNAL_IP_PLACEHOLDER
 
-; WebSocket Transport (Keep it just in case)
+; WebSocket Transport (For WebRTC)
 [transport-ws]
 type=transport
 protocol=ws
 bind=0.0.0.0:8088
+external_media_address=EXTERNAL_IP_PLACEHOLDER
+external_signaling_address=EXTERNAL_IP_PLACEHOLDER
 
 ; --- Templates ---
 ; Standard Endpoint (For Linphone)
@@ -63,5 +70,20 @@ type=identify
 endpoint=201
 match=201
 
-; --- Dynamic Users ---
-#include pjsip_custom.conf
+; --- WebRTC Extensions (Keep them just in case) ---
+[100](endpoint_standard)
+auth=auth100
+aors=100
+use_avpf=yes
+media_encryption=dtls
+dtls_verify=fingerprint
+dtls_setup=actpass
+dtls_cert_file=/etc/asterisk/keys/asterisk.pem
+dtls_private_key=/etc/asterisk/keys/asterisk.key
+[auth100](auth_user)
+username=100
+[100](aor_dynamic)
+[identify100]
+type=identify
+endpoint=100
+match=100

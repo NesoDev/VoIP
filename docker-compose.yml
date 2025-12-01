@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: voip-backend
+    ports:
+      - "8000:8000"      # API FastAPI
+      - "5060:5060/udp"  # SIP
+      - "10000-10100:10000-10100/udp"  # RTP (rango de puertos para audio)
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    networks:
+      - voip-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build: ./frontend
+    container_name: voip-frontend
+    ports:
+      - "3000:3000"      # Nuxt.js
+    environment:
+      - NUXT_PUBLIC_API_BASE=http://localhost:8000
+      - NUXT_PUBLIC_WS_BASE=ws://localhost:8000
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - voip-network
+
+networks:
+  voip-network:
+    driver: bridge

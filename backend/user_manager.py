@@ -64,34 +64,40 @@ class UserManager:
     """Gestiona los usuarios conectados y sus IPs internas"""
     def __init__(self):
         self.users: Dict[str, User] = {}
-        self.ip_counter = 1
-        self.logger = VoIPLogger()
+        self.call_manager = CallManager()
+        # IP pool management
+        self.ip_base = "192.168.100."
+        self.next_ip = 10
         
     def generate_internal_ip(self) -> str:
         """Genera una IP interna única para el usuario"""
-        ip = f"192.168.100.{self.ip_counter}"
-        self.ip_counter += 1
-        if self.ip_counter > 254:
-            self.ip_counter = 1
+        # This method is no longer used as IP generation is inline in register_user
+        # Keeping it for now to avoid breaking other parts if they still call it.
+        # However, the new register_user logic implies it's not needed.
+        ip = f"{self.ip_base}{self.next_ip}"
+        self.next_ip += 1
         return ip
     
     def register_user(self, username: str) -> User:
         """Registra un nuevo usuario"""
         if username in self.users:
-            # Actualizar heartbeat si ya existe
-            self.users[username].last_heartbeat = time.time()
-            self.logger.log_step(
-                "USUARIO YA REGISTRADO - ACTUALIZACIÓN",
+            user = self.users[username]
+            user.last_heartbeat = time.time() # Assuming last_heartbeat is still the field
+            user.status = "online"
+            voip_logger.log_step(
+                "REGISTRO DE USUARIO (EXISTENTE)",
                 {
-                    'username': username,
-                    'ip_interna': self.users[username].internal_ip,
-                    'estado': self.users[username].status
+                    'usuario': username,
+                    'ip_interna': user.internal_ip,
+                    'estado': 'Reconexión exitosa'
                 }
             )
-            return self.users[username]
-        
-        internal_ip = self.generate_internal_ip()
-        sip_port = 5060 + len(self.users)
+            return user
+            
+        # Asignar nueva IP
+        internal_ip = f"{self.ip_base}{self.next_ip}"
+        self.next_ip += 1
+        sip_port = 5060 + len(self.users) # Keep original SIP port logic
         
         user = User(
             username=username,
@@ -101,20 +107,17 @@ class UserManager:
             last_heartbeat=time.time(),
             status="online"
         )
-        
         self.users[username] = user
         
-        self.logger.log_step(
-            "REGISTRO DE USUARIO",
+        voip_logger.log_step(
+            "NUEVO REGISTRO DE USUARIO",
             {
-                'username': username,
-                'ip_interna': internal_ip,
-                'puerto_sip': sip_port,
-                'timestamp': datetime.now().isoformat(),
-                'total_usuarios': len(self.users)
+                'usuario': username,
+                'ip_asignada': internal_ip,
+                'puertos': 'SIP:5060, RTP:10000+',
+                'estado': 'Usuario creado y activo'
             }
         )
-        
         return user
     
     def update_heartbeat(self, username: str) -> bool:
@@ -122,8 +125,9 @@ class UserManager:
         if username in self.users:
             old_time = self.users[username].last_heartbeat
             self.users[username].last_heartbeat = time.time()
+            self.users[username].status = "online" # Ensure status is online on heartbeat
             
-            self.logger.log_step(
+            voip_logger.log_step( # Changed to voip_logger as per new code
                 "HEARTBEAT RECIBIDO",
                 {
                     'username': username,

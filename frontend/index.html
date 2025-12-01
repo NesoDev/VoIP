@@ -20,61 +20,189 @@
                     <div>
                         <h1>VoIP Demo</h1>
                         <p>SIP Protocol Demonstration</p>
-                    </div>
-                </div>
-                <div id="user-info" class="user-info" style="display: none;">
-                    <div class="status-indicator"></div>
-                    <div>
-                        <div class="username"></div>
-                        <div class="user-ip"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
+                        <div class="container">
+                            <header>
+                                <h1>VoIP Demo <span class="badge">WebRTC</span></h1>
+                                <div id="user-info" style="display: none;">
+                                    <span class="status-dot"></span>
+                                    <span class="username"></span>
+                                    <span class="user-ip"></span>
+                                    <button id="logout-btn" class="btn-secondary">Logout</button>
+                                </div>
+                            </header>
 
-    <main class="container main-content">
-        <div id="login-section" class="login-section">
-            <div class="login-card">
-                <h2>User Registration</h2>
-                <p>Enter your name to connect to the VoIP system</p>
-                <form id="login-form">
-                    <div class="form-group">
-                        <label for="username">Username</label>
-                        <input type="text" id="username" name="username" required placeholder="Enter username">
-                    </div>
-                    <button type="submit" id="login-btn">Connect</button>
-                </form>
-            </div>
-        </div>
+                            <!-- Login Section -->
+                            <section id="login-section">
+                                <div class="card login-card">
+                                    <h2>Connect to SIP Server</h2>
+                                    <form id="login-form">
+                                        <div class="form-group">
+                                            <label for="display_name">Display Name</label>
+                                            <input type="text" id="display_name" placeholder="e.g. John Doe" required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="sip_uri">SIP Extension (URI)</label>
+                                            <input type="text" id="sip_uri" placeholder="e.g. 101@my-pbx.3cx.us"
+                                                required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="sip_password">SIP Password</label>
+                                            <input type="password" id="sip_password" placeholder="Secret password"
+                                                required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="wss_url">WSS URL</label>
+                                            <input type="text" id="wss_url" placeholder="ws://localhost:8000/sip-proxy"
+                                                required>
+                                        </div>
+                                </div>
+                                <button type="submit" id="login-btn" class="btn-primary">Connect</button>
+                                </form>
+                        </div>
+                        </section>
 
-        <div id="dashboard" class="dashboard" style="display: none;">
-            <div class="sidebar">
-                <div class="panel">
-                    <div class="panel-header">
-                        <h3>Connected Users</h3>
-                        <span id="user-count" class="badge">0</span>
-                    </div>
-                    <div id="users-list" class="users-list"></div>
-                </div>
-            </div>
+                        <!-- Dashboard Section -->
+                        <section id="dashboard" style="display: none;">
+                            <!-- Sidebar Navigation -->
+                            <nav class="sidebar">
+                                <button class="nav-btn active" data-view="dialer">Dialer</button>
+                                <button class="nav-btn" data-view="history">Call History</button>
+                                <button class="nav-btn" data-view="logs">SIP Logs</button>
+                            </nav>
 
-            <div class="main-panel">
-                <div class="panel">
-                    <div class="panel-header">
-                        <h3>VoIP Communication Logs</h3>
-                        <div class="panel-actions">
-                            <button id="clear-logs-btn" class="btn-secondary">Clear</button>
-                            <button id="auto-scroll-btn" class="btn-secondary active">Auto-scroll: ON</button>
+                            <!-- Main Content Area -->
+                            <main class="main-content">
+
+                                <!-- Dialer View -->
+                                <div id="view-dialer" class="view-section active">
+                                    <div class="section-header">
+                                        <h3>Dialer</h3>
+                                        <div class="status-badge" id="connection-status">Disconnected</div>
+                                    </div>
+                                    <div class="dialer-container">
+                                        <input type="text" id="dial-input" placeholder="Enter extension to call..."
+                                            class="dial-input">
+                                        <button id="call-btn" class="btn-success btn-lg">📞 Call</button>
+                                    </div>
+                                </div>
+
+                                <!-- Call History View -->
+                                <div id="view-history" class="view-section">
+                                    <div class="section-header">
+                                        <h3>Call History</h3>
+                                        <button id="refresh-history-btn" class="btn-sm">Clear</button>
+                                    </div>
+                                    <div id="history-list" class="list-group">
+                                        <!-- History items -->
+                                    </div>
+                                </div>
+
+                                <!-- Call Details View (Hidden by default) -->
+                                <div id="view-call-details" class="view-section" style="display: none;">
+                                    <div class="section-header">
+                                        <button class="back-btn">← Back</button>
+                                        <h3>SIP Flow Visualization</h3>
+                                    </div>
+                                    <div class="process-visualization">
+                                        <div class="process-step" id="step-invite">
+                                            <div class="icon">📤</div>
+                                            <div class="label">INVITE</div>
+                                            <div class="status">Waiting...</div>
+                                        </div>
+                                        <div class="arrow">→</div>
+                                        <div class="process-step" id="step-trying">
+                                            <div class="icon">⏳</div>
+                                            <div class="label">100 Trying</div>
+                                            <div class="status">Waiting...</div>
+                                        </div>
+                                        <div class="arrow">→</div>
+                                        <div class="process-step" id="step-ringing">
+                                            <div class="icon">🔔</div>
+                                            <div class="label">180 Ringing</div>
+                                            <div class="status">Waiting...</div>
+                                        </div>
+                                        <div class="arrow">→</div>
+                                        <div class="process-step" id="step-ok">
+                                            <div class="icon">✅</div>
+                                            <div class="label">200 OK</div>
+                                            <div class="status">Waiting...</div>
+                                        </div>
+                                        <div class="arrow">→</div>
+                                        <div class="process-step" id="step-ack">
+                                            <div class="icon">🤝</div>
+                                            <div class="label">ACK</div>
+                                            <div class="status">Waiting...</div>
+                                        </div>
+                                        <div class="arrow">→</div>
+                                        <div class="process-step" id="step-rtp">
+                                            <div class="icon">🔊</div>
+                                            <div class="label">RTP Media</div>
+                                            <div class="status">Waiting...</div>
+                                        </div>
+                                        <div class="arrow">→</div>
+                                        <div class="process-step" id="step-bye">
+                                            <div class="icon">👋</div>
+                                            <div class="label">BYE</div>
+                                            <div class="status">Waiting...</div>
+                                        </div>
+                                    </div>
+                                    <div class="detailed-logs" id="call-detailed-logs">
+                                        <!-- Detailed logs list -->
+                                    </div>
+                                </div>
+
+                                <!-- System Logs View -->
+                                <div id="view-logs" class="view-section">
+                                    <div class="section-header">
+                                        <h3>SIP Debug Logs</h3>
+                                        <div class="actions">
+                                            <button id="auto-scroll-btn" class="btn-sm active">Auto-scroll:
+                                                ON</button>
+                                            <button id="clear-logs-btn" class="btn-sm btn-danger">Clear</button>
+                                        </div>
+                                    </div>
+                                    <div id="logs-container" class="logs-console">
+                                        <!-- Logs -->
+                                    </div>
+                                </div>
+                            </main>
+                        </section>
+                    </div>
+
+                    <!-- Incoming Call Modal -->
+                    <div id="incoming-call-modal" class="modal">
+                        <div class="modal-content">
+                            <h3>Incoming Call</h3>
+                            <p>Incoming call from <strong id="caller-name">Unknown</strong></p>
+                            <div class="modal-actions">
+                                <button id="reject-btn" class="btn-danger">Reject</button>
+                                <button id="accept-btn" class="btn-success">Accept</button>
+                            </div>
                         </div>
                     </div>
-                    <div id="logs-container" class="logs-container"></div>
-                </div>
-            </div>
-        </div>
-    </main>
 
-    <script src="app.js"></script>
+                    <!-- Active Call Overlay -->
+                    <div id="active-call-overlay" class="overlay" style="display: none;">
+                        <div class="call-card">
+                            <div class="call-status">In Call with <span id="peer-name">...</span></div>
+                            <div class="call-timer" id="call-timer">00:00</div>
+                            <div class="visualizer-container">
+                                <canvas id="audio-visualizer"></canvas>
+                            </div>
+                            <div class="call-controls">
+                                <button id="mute-btn" class="btn-control">🎤</button>
+                                <button id="hangup-btn" class="btn-control btn-danger">📞</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Audio Elements -->
+                    <audio id="remote-audio" autoplay></audio>
+                    <audio id="ringtone" src="https://assets.mixkit.co/active_storage/sfx/1359/1359-preview.mp3"
+                        loop></audio>
+
+                    <script src="https://cdnjs.cloudflare.com/ajax/libs/jssip/3.10.0/jssip.min.js"></script>
+                    <script src="app.js"></script>
 </body>
 
 </html>

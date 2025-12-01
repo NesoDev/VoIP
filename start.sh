@@ -49,13 +49,16 @@ print_ok "Contenedores detenidos (si existían)."
 # ── Paso 2 – Construir imágenes Docker ───────────────────────────
 print_step "Construyendo imágenes Docker (puede tardar)..."
 if docker compose version >/dev/null 2>&1; then
-    (docker compose build) &>/dev/null &
+    docker compose build 2>&1 | while IFS= read -r line; do
+        echo -e "${BLUE}[BUILD]${NC} $line"
+    done
 else
-    (docker-compose build) &>/dev/null &
+    docker-compose build 2>&1 | while IFS= read -r line; do
+        echo -e "${BLUE}[BUILD]${NC} $line"
+    done
 fi
-spinner $!
-wait $!
 print_ok "Imágenes construidas."
+
 
 # ── Paso 3 – Levantar los servicios ─────────────────────────────
 print_step "Iniciando servicios..."

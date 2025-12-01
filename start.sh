@@ -2,110 +2,138 @@
 
 set -e
 
-echo "========================================="
-echo "  VoIP Demo - Deployment Script"
-echo "========================================="
-echo ""
+# Color definitions
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
 
-# Function to install Docker on Ubuntu
+# Print functions
+print_step() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+print_result() {
+    echo -e "${GREEN}[✓]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[✗]${NC} $1"
+}
+
+print_warning() {
+    echo -e "${YELLOW}[!]${NC} $1"
+}
+
+# Spinner for long operations
+spinner() {
+    local pid=$1
+    local delay=0.1
+    local spinstr='|/-\'
+    while kill -0 $pid 2>/dev/null; do
+        for (( i=0; i<${#spinstr}; i++ )); do
+            printf "\r${YELLOW}[%c]${NC}" "${spinstr:$i:1}"
+            sleep $delay
+        done
+    done
+    printf "\r"
+}
+
+# Installation functions
 install_docker() {
-    echo ""
-    echo "Installing Docker..."
+    print_step "  └─ Adding Docker repository..."
+    (sudo apt-get update -qq && \
+     sudo apt-get install -y -qq ca-certificates curl gnupg lsb-release && \
+     sudo mkdir -p /etc/apt/keyrings && \
+     curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg && \
+     echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | \
+     sudo tee /etc/apt/sources.list.d/docker.list > /dev/null) &>/dev/null &
+    spinner $!
+    wait $!
     
-    # Update package index
-    sudo apt-get update
+    print_step "  └─ Installing Docker Engine..."
+    (sudo apt-get update -qq && \
+     sudo apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin) &>/dev/null &
+    spinner $!
+    wait $!
     
-    # Install prerequisites
-    sudo apt-get install -y \
-        ca-certificates \
-        curl \
-        gnupg \
-        lsb-release
-    
-    # Add Docker's official GPG key
-    sudo mkdir -p /etc/apt/keyrings
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-    
-    # Set up repository
-    echo \
-      "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-      $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-    
-    # Update package index
-    sudo apt-get update
-    
-    # Install Docker Engine
-    sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-    
-    # Add current user to docker group
+    print_step "  └─ Configuring Docker permissions..."
     sudo usermod -aG docker $USER
     
-    echo ""
-    echo "Docker installed successfully!"
-    echo "Note: You may need to log out and back in for group changes to take effect."
-    echo "      Alternatively, run: newgrp docker"
-    echo ""
+    print_result "Docker installed successfully"
 }
 
-# Function to install Docker Compose standalone
 install_docker_compose() {
-    echo ""
-    echo "Installing Docker Compose..."
+    print_step "  └─ Installing Docker Compose..."
+    (sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" \
+        -o /usr/local/bin/docker-compose && \
+     sudo chmod +x /usr/local/bin/docker-compose) &>/dev/null &
+    spinner $!
+    wait $!
     
-    sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" \
-        -o /usr/local/bin/docker-compose
-    
-    sudo chmod +x /usr/local/bin/docker-compose
-    
-    echo "Docker Compose installed successfully!"
-    echo ""
+    print_result "Docker Compose installed successfully"
 }
 
-# Detect environment
-echo "[1/7] Detecting environment..."
+# Banner
+clear
+echo -e "${BLUE}"
+echo "╔══════════════════════════════════════════════════════════╗"
+echo "║                                                          ║"
+echo "║              VoIP Demo - Deployment Script               ║"
+echo "║                                                          ║"
+echo "╚══════════════════════════════════════════════════════════╝"
+echo -e "${NC}"
+echo ""
+
+# Step 1: Environment detection
+print_step "Detecting environment..."
 if curl -s -m 5 http://169.254.169.254/latest/meta-data/public-ipv4 &>/dev/null; then
     PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
-    echo "      AWS environment detected"
-    echo "      Public IP: $PUBLIC_IP"
+    print_result "AWS environment detected - Public IP: $PUBLIC_IP"
 else
     PUBLIC_IP="localhost"
-    echo "      Local environment detected"
+    print_result "Local environment detected"
 fi
 
-echo ""
-echo "[2/7] Checking Docker installation..."
+# Step 2: Docker verification
+print_step "Checking Docker installation..."
 
 DOCKER_MISSING=false
 COMPOSE_MISSING=false
 
-# Check Docker
 if ! command -v docker &> /dev/null; then
-    echo "      Docker not found"
+    print_warning "Docker not found"
     DOCKER_MISSING=true
 else
-    echo "      Docker found: $(docker --version)"
+    DOCKER_VERSION=$(docker --version | cut -d ' ' -f3 | sed 's/,//')
+    print_result "Docker found - Version: $DOCKER_VERSION"
 fi
 
-# Check Docker Compose (try both plugin and standalone)
 if docker compose version &> /dev/null; then
-    echo "      Docker Compose found: $(docker compose version)"
+    COMPOSE_VERSION=$(docker compose version --short 2>/dev/null || echo "unknown")
+    print_result "Docker Compose found - Version: $COMPOSE_VERSION"
 elif command -v docker-compose &> /dev/null; then
-    echo "      Docker Compose found: $(docker-compose --version)"
+    COMPOSE_VERSION=$(docker-compose --version | cut -d ' ' -f3 | sed 's/,//')
+    print_result "Docker Compose found - Version: $COMPOSE_VERSION"
 else
-    echo "      Docker Compose not found"
+    print_warning "Docker Compose not found"
     COMPOSE_MISSING=true
 fi
 
-# Install if missing
+# Step 3: Install if needed
 if [ "$DOCKER_MISSING" = true ] || [ "$COMPOSE_MISSING" = true ]; then
     echo ""
-    echo "Missing components detected."
+    echo -e "${YELLOW}Missing components detected${NC}"
     echo ""
-    
-    read -p "Would you like to install the missing components? (y/n): " -n 1 -r
+    echo -n -e "${YELLOW}Install missing components? [y/N]:${NC} "
+    read -n 1 -r
     echo ""
     
     if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo ""
+        print_step "Installing dependencies..."
+        
         if [ "$DOCKER_MISSING" = true ]; then
             install_docker
         fi
@@ -114,20 +142,16 @@ if [ "$DOCKER_MISSING" = true ] || [ "$COMPOSE_MISSING" = true ]; then
             install_docker_compose
         fi
         
-        echo "Installation complete. Continuing with deployment..."
-        
-        # Apply group changes without logout
         if [ "$DOCKER_MISSING" = true ]; then
+            print_warning "Docker group permissions require logout/login"
+            print_warning "Attempting to apply permissions for this session..."
             echo ""
-            echo "Applying Docker group permissions..."
-            newgrp docker <<EOF
-            exec "$0" "$@"
-EOF
-            exit 0
         fi
     else
         echo ""
-        echo "Installation cancelled. Please install Docker manually:"
+        print_error "Installation cancelled"
+        echo ""
+        echo -e "${BLUE}Manual installation:${NC}"
         echo "  sudo apt-get update"
         echo "  sudo apt-get install -y docker.io docker-compose"
         echo ""
@@ -135,10 +159,8 @@ EOF
     fi
 fi
 
-echo ""
-echo "[3/7] Configuring environment variables..."
-
-# Create frontend directory if it doesn't exist
+# Step 4: Environment configuration
+print_step "Configuring environment variables..."
 mkdir -p frontend
 
 cat > frontend/.env << EOF
@@ -146,80 +168,84 @@ API_BASE=http://${PUBLIC_IP}:8000
 WS_BASE=ws://${PUBLIC_IP}:8000
 EOF
 
-echo "      API endpoint: http://${PUBLIC_IP}:8000"
-echo "      WebSocket endpoint: ws://${PUBLIC_IP}:8000"
-echo ""
+print_result "Configuration saved"
 
-# Stop existing containers
-echo "[4/7] Stopping existing containers..."
-if docker compose version &> /dev/null; then
+# Step 5: Stop existing containers
+print_step "Stopping existing containers..."
+if docker compose version &> /dev/null 2>&1; then
     docker compose down &>/dev/null || true
 else
     docker-compose down &>/dev/null || true
 fi
-echo ""
+print_result "Cleanup complete"
 
-# Build
-echo "[5/7] Building Docker images..."
-echo "      This may take several minutes on first run"
-if docker compose version &> /dev/null; then
-    docker compose build
+# Step 6: Build images
+print_step "Building Docker images (this may take several minutes)..."
+if docker compose version &> /dev/null 2>&1; then
+    (docker compose build) &>/dev/null &
 else
-    docker-compose build
+    (docker-compose build) &>/dev/null &
 fi
+spinner $!
+wait $!
+print_result "Images built successfully"
 
-echo ""
-echo "[6/7] Starting services..."
-if docker compose version &> /dev/null; then
-    docker compose up -d
+# Step 7: Start services
+print_step "Starting services..."
+if docker compose version &> /dev/null 2>&1; then
+    (docker compose up -d) &>/dev/null &
 else
-    docker-compose up -d
+    (docker-compose up -d) &>/dev/null &
 fi
+spinner $!
+wait $!
+print_result "Services started"
 
-echo ""
-echo "[7/7] Waiting for services to be ready..."
-sleep 10
+# Step 8: Wait for services
+print_step "Waiting for services to be ready..."
+sleep 5
+print_result "Services ready"
 
-# Verify status
+# Final status
 echo ""
-echo "Service Status:"
-if docker compose version &> /dev/null; then
-    docker compose ps
-else
-    docker-compose ps
-fi
+echo -e "${GREEN}╔══════════════════════════════════════════════════════════╗${NC}"
+echo -e "${GREEN}║                                                          ║${NC}"
+echo -e "${GREEN}║              ✓ Deployment Complete                       ║${NC}"
+echo -e "${GREEN}║                                                          ║${NC}"
+echo -e "${GREEN}╚══════════════════════════════════════════════════════════╝${NC}"
+echo ""
 
-echo ""
-echo "========================================="
-echo "  Deployment Complete"
-echo "========================================="
-echo ""
-echo "Access Points:"
-echo ""
+echo -e "${BLUE}Access Points:${NC}"
 if [ "$PUBLIC_IP" = "localhost" ]; then
-    echo "  Frontend: http://localhost:3000"
-    echo "  Backend API: http://localhost:8000"
+    echo -e "  • Frontend:    ${GREEN}http://localhost:3000${NC}"
+    echo -e "  • Backend API: ${GREEN}http://localhost:8000${NC}"
 else
-    echo "  Frontend: http://${PUBLIC_IP}:3000"
-    echo "  Backend API: http://${PUBLIC_IP}:8000"
+    echo -e "  • Frontend:    ${GREEN}http://${PUBLIC_IP}:3000${NC}"
+    echo -e "  • Backend API: ${GREEN}http://${PUBLIC_IP}:8000${NC}"
     echo ""
-    echo "Required Firewall Ports:"
-    echo "  - TCP 3000 (Frontend)"
-    echo "  - TCP 8000 (Backend API)"
-    echo "  - UDP 5060 (SIP Signaling)"
-    echo "  - UDP 10000-10100 (RTP Audio)"
+    echo -e "${YELLOW}Required Firewall Ports:${NC}"
+    echo "  • TCP 3000 (Frontend)"
+    echo "  • TCP 8000 (Backend API)"
+    echo "  • UDP 5060 (SIP Signaling)"
+    echo "  • UDP 10000-10100 (RTP Audio)"
 fi
 
 echo ""
-echo "Common Commands:"
-if docker compose version &> /dev/null; then
-    echo "  View logs:    docker compose logs -f"
-    echo "  Stop:         docker compose down"
-    echo "  Restart:      docker compose restart"
+echo -e "${BLUE}Common Commands:${NC}"
+if docker compose version &> /dev/null 2>&1; then
+    echo -e "  • View logs:  ${GREEN}docker compose logs -f${NC}"
+    echo -e "  • Stop:       ${GREEN}docker compose down${NC}"
+    echo -e "  • Restart:    ${GREEN}docker compose restart${NC}"
 else
-    echo "  View logs:    docker-compose logs -f"
-    echo "  Stop:         docker-compose down"
-    echo "  Restart:      docker-compose restart"
+    echo -e "  • View logs:  ${GREEN}docker-compose logs -f${NC}"
+    echo -e "  • Stop:       ${GREEN}docker-compose down${NC}"
+    echo -e "  • Restart:    ${GREEN}docker-compose restart${NC}"
 fi
 echo ""
-echo "========================================="
+
+if [ "$DOCKER_MISSING" = true ]; then
+    echo -e "${YELLOW}⚠ IMPORTANT:${NC}"
+    echo "  You must logout and login again to apply Docker group changes."
+    echo -e "  Execute: ${BLUE}exit${NC} and reconnect."
+    echo ""
+fi

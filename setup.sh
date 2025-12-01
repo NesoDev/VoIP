@@ -119,16 +119,7 @@ if $DOCKER_MISSING || $COMPOSE_MISSING; then
     fi
 fi
 
-# ── Paso 4 – Generar .env para el frontend ───────────────────────
-print_step "Generando archivo .env..."
-mkdir -p frontend
-cat > frontend/.env <<EOF
-API_BASE=http://${PUBLIC_IP}:8000
-WS_BASE=ws://${PUBLIC_IP}:8000
-EOF
-print_ok ".env creado"
-
-# ── Paso 5 – Resumen final ─────────────────────────────────────
+# ── Paso 4 – Resumen final ─────────────────────────────────────
 echo
 cat <<'EOF' | sed "s/^/$(printf \"${GREEN}\")/;s/$/$(printf \"${NC}\")/"
 ╔══════════════════════════════════════════════════════════╗

@@ -44,37 +44,6 @@ type=aor
 max_contacts=5
 remove_existing=yes
 
-; --- Extensions (Standard SIP) ---
-
-; Extension 101 (Para Linphone PC)
-[101](endpoint_standard)
-auth=auth101
-aors=101
-[auth101](auth_user)
-username=101
-[101](aor_dynamic)
-
-; Extension 201 (Para Linphone Móvil/Otro)
-[201](endpoint_standard)
-auth=auth201
-aors=201
-[auth201](auth_user)
-username=201
-[201](aor_dynamic)
-
-; --- WebRTC Extensions (Keep them just in case) ---
-[100](endpoint_standard)
-auth=auth100
-aors=100
-use_avpf=yes
-media_encryption=dtls
-dtls_verify=fingerprint
-dtls_setup=actpass
-dtls_cert_file=/etc/asterisk/keys/asterisk.pem
-dtls_private_key=/etc/asterisk/keys/asterisk.key
-[auth100](auth_user)
-username=100
-[100](aor_dynamic)
 
 ; --- Dynamic Users ---
 #include pjsip_custom.conf

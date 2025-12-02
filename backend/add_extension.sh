@@ -55,9 +55,12 @@ with open(file_path, 'r') as f:
     content = f.read()
 
 # Regex to remove the user block.
-# We look for [user](endpoint_standard) ... until [identifyUser] ... match=user
-# This covers the whole block we add.
-pattern = r'\[{0}\]\(endpoint_standard\).*?match={0}\n'.format(user)
+# New format without [identify]:
+# ; --- User XXX ---
+# [XXX](endpoint_standard)
+# ...
+# [XXX](aor_dynamic)
+pattern = r'; --- User {0} ---\s*\n\[{0}\]\(endpoint_standard\).*?\[{0}\]\(aor_dynamic\)\s*\n'.format(user)
 new_content = re.sub(pattern, '', content, flags=re.DOTALL)
 
 with open(file_path, 'w') as f:

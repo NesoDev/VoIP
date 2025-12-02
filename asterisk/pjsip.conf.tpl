@@ -43,6 +43,7 @@ realm=asterisk
 type=aor
 max_contacts=5
 remove_existing=yes
+qualify_frequency=60
 
 
 ; --- Dynamic Users ---

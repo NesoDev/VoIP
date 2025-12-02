@@ -1,0 +1,65 @@
+; Dynamic PJSIP Users
+
+; --- User 101 ---
+[101](endpoint_standard)
+auth=auth101
+aors=101
+callerid="user1" <101>
+
+[auth101](auth_user)
+username=101
+password=1234
+
+[101](aor_dynamic)
+[identify101]
+type=identify
+endpoint=101
+match=101
+
+; --- User 102 ---
+[102](endpoint_standard)
+auth=auth102
+aors=102
+callerid="user2" <102>
+
+[auth102](auth_user)
+username=102
+password=1234
+
+[102](aor_dynamic)
+[identify102]
+type=identify
+endpoint=102
+match=102
+
+; --- User 103 ---
+[103](endpoint_standard)
+auth=auth103
+aors=103
+callerid="user3" <103>
+
+[auth103](auth_user)
+username=103
+password=1234
+
+[103](aor_dynamic)
+[identify103]
+type=identify
+endpoint=103
+match=103
+
+; --- User 200 ---
+[200](endpoint_standard)
+auth=auth200
+aors=200
+callerid="user4" <200>
+
+[auth200](auth_user)
+username=200
+password=1234
+
+[200](aor_dynamic)
+[identify200]
+type=identify
+endpoint=200
+match=200

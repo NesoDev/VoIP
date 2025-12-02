@@ -53,10 +53,6 @@ aors=101
 [auth101](auth_user)
 username=101
 [101](aor_dynamic)
-[identify101]
-type=identify
-endpoint=101
-match=101
 
 ; Extension 201 (Para Linphone Móvil/Otro)
 [201](endpoint_standard)
@@ -65,10 +61,6 @@ aors=201
 [auth201](auth_user)
 username=201
 [201](aor_dynamic)
-[identify201]
-type=identify
-endpoint=201
-match=201
 
 ; --- WebRTC Extensions (Keep them just in case) ---
 [100](endpoint_standard)
@@ -83,10 +75,6 @@ dtls_private_key=/etc/asterisk/keys/asterisk.key
 [auth100](auth_user)
 username=100
 [100](aor_dynamic)
-[identify100]
-type=identify
-endpoint=100
-match=100
 
 ; --- Dynamic Users ---
 #include pjsip_custom.conf

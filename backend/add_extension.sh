@@ -79,10 +79,6 @@ username=$USERNAME
 password=$PASSWORD
 
 [$USERNAME](aor_dynamic)
-[identify$USERNAME]
-type=identify
-endpoint=$USERNAME
-match=$USERNAME
 EOF
 
 # 2. Add to Dialplan (Optional, as we use pattern matching _XXX)
